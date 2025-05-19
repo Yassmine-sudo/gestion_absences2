@@ -5,9 +5,11 @@ services:
     build: .
     image: gestion_absences_image:latest
     ports:
-      - "8099:8080"
+      - "8099:3000"
     depends_on:
       - db
+    volumes:
+      - ./mobile/backend:/app/backend
 
   db:
     image: postgres:15
