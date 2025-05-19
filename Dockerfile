@@ -1,9 +1,11 @@
 FROM node:14 AS builder
 WORKDIR /app
-COPY app/package*.json ./     
-RUN npm ci --production
-COPY app .                    
-RUN npm run build
+COPY app/package*.json ./
+RUN npm install --production
+COPY app .
+
+# Suppression de cette ligne car pas de script build dans package.json
+# RUN npm run build
 
 FROM node:14
 WORKDIR /app
