@@ -3,47 +3,48 @@ pipeline {
 
     environment {
         DOCKER_BUILDKIT = 1
+        DOCKER_IMAGE = "gestion_absences_image:latest"
+    }
+
+    options {
+        // Timeout global : abandonne la pipeline si trop longue (par exemple 30 minutes)
+        timeout(time: 30, unit: 'MINUTES')
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/Yassmine-sudo/gestion_absences2'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 echo '→ Build de l\'image Docker'
-                sh 'docker build -t gestion_absences_image:latest .'
+                sh 'newgrp docker -c "docker build --network host -t $DOCKER_IMAGE -f Dockerfile ."'
             }
         }
 
         stage('Docker Compose Up') {
             steps {
                 echo '→ Lancement des services via docker-compose'
-                sh 'docker-compose up -d --build'
+                sh 'newgrp docker -c "docker-compose up -d --build"'
             }
         }
 
         stage('Deploy with Ansible') {
             steps {
                 echo '→ Déploiement via Ansible (local)'
-                sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --connection=local'
+                sh 'newgrp docker -c "ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --connection=local"'
             }
         }
 
         stage('Install dependencies') {
             steps {
-                echo '→ Installation des dépendances Selenium'
-                sh 'pip3 install selenium'
+                echo '→ Mise à jour de pip et installation des dépendances Selenium'
+                sh 'newgrp docker -c "pip3 install --upgrade pip"'
+                sh 'newgrp docker -c "pip3 install --upgrade selenium"'
             }
         }
 
         stage('Run Selenium Test') {
             steps {
                 echo '→ Exécution du test Selenium'
-                sh 'python3 tests/test_google.py'
+                sh 'newgrp docker -c "python3 tests/test_google.py"'
             }
         }
     }
@@ -51,8 +52,8 @@ pipeline {
     post {
         always {
             echo 'Pipeline – logs Docker-Compose :'
-            sh 'docker-compose logs --tail=50'
-            sh 'docker-compose down --remove-orphans'
+            sh 'newgrp docker -c "docker-compose logs --tail=50"'
+            sh 'newgrp docker -c "docker-compose down --remove-orphans"'
         }
     }
 }
