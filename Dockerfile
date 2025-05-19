@@ -1,12 +1,10 @@
-# utilise Node pour builder ton app
 FROM node:14 AS builder
 WORKDIR /app
-COPY package*.json ./
+COPY app/package*.json ./     
 RUN npm ci --production
-COPY . .
-RUN npm run build   # si tu as un build step, sinon retire
+COPY app .                    
+RUN npm run build
 
-# image finale pour le runtime
 FROM node:14
 WORKDIR /app
 COPY --from=builder /app ./
